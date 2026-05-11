@@ -3,139 +3,445 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RizzlePayment - Crypto Payment Gateway</title>
+  <title>RizzlePayment - Cross-Chain Crypto Payment Gateway</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
   <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    :root{--primary:#6366f1;--primary-hover:#4f46e5;--secondary:#8b5cf6;--accent:#10b981;--bg:#0f172a;--card:#1e293b;--text:#f8fafc;--muted:#94a3b8;--border:#334155;--radius:12px}
-    body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#0f172a,#1a1f35);min-height:100vh;color:var(--text);line-height:1.6}
-    .container{max-width:1200px;margin:0 auto;padding:2rem;min-height:100vh;display:flex;flex-direction:column}
-    .header{display:flex;justify-content:space-between;align-items:center;padding:1.5rem 0;border-bottom:1px solid var(--border);margin-bottom:2rem}
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+    :root{--primary:#6366f1;--primary-hover:#4f46e5;--primary-glow:rgba(99,102,241,.4);--secondary:#8b5cf6;--accent:#10b981;--warning:#f59e0b;--bg:#0a0e1a;--card:rgba(30,41,59,.7);--card-hover:rgba(30,41,59,.9);--text:#f1f5f9;--muted:#64748b;--border:rgba(51,65,85,.5);--radius:16px;--radius-sm:10px}
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden}
+    body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(99,102,241,.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(139,92,246,.06) 0%,transparent 50%),radial-gradient(ellipse at 50% 80%,rgba(16,185,129,.04) 0%,transparent 50%);pointer-events:none;z-index:0}
+    .container{max-width:1200px;margin:0 auto;padding:1.5rem 2rem;position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+    @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+    .animate-in{animation:fadeIn .5s ease forwards}
+    .animate-in-d1{animation:fadeIn .5s ease .1s forwards;opacity:0}
+    .animate-in-d2{animation:fadeIn .5s ease .2s forwards;opacity:0}
+    .animate-in-d3{animation:fadeIn .5s ease .3s forwards;opacity:0}
+
+    .header{display:flex;justify-content:space-between;align-items:center;padding:1.25rem 0;border-bottom:1px solid var(--border);margin-bottom:2.5rem;animation:fadeIn .5s ease forwards}
+    .header-l{display:flex;align-items:center;gap:.75rem}
     .logo{display:flex;align-items:center;gap:.75rem;text-decoration:none}
-    .logo-icon{width:40px;height:40px;background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.25rem;color:#fff}
-    .logo-text{font-size:1.5rem;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .logo-icon{width:42px;height:42px;background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.25rem;color:#fff;box-shadow:0 4px 16px var(--primary-glow)}
+    .logo-text{font-size:1.35rem;font-weight:800;background:linear-gradient(135deg,var(--primary),var(--secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .header-r{display:flex;align-items:center;gap:.75rem}
+
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.6rem 1.25rem;border-radius:var(--radius-sm);font-size:.875rem;font-weight:600;cursor:pointer;transition:all .2s;border:none;font-family:inherit}
+    .btn-primary{background:linear-gradient(135deg,var(--primary),var(--secondary));color:#fff;box-shadow:0 4px 16px var(--primary-glow)}
+    .btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px var(--primary-glow)}
+    .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+    .btn-outline:hover{background:rgba(99,102,241,.1);border-color:var(--primary)}
+    .btn-sm{padding:.45rem 1rem;font-size:.8rem}
+    .btn-ghost{background:transparent;color:var(--muted)}
+    .btn-ghost:hover{color:var(--text);background:rgba(255,255,255,.05)}
+
+    .wallet-btn{display:inline-flex;align-items:center;gap:.5rem;padding:.55rem 1.1rem;border-radius:var(--radius-sm);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-family:inherit}
+    .wallet-btn:hover{background:rgba(99,102,241,.15);border-color:var(--primary);box-shadow:0 0 20px rgba(99,102,241,.15)}
+    .wallet-btn.connected{border-color:var(--accent);background:rgba(16,185,129,.1)}
+    .wallet-btn.connected:hover{border-color:var(--accent);background:rgba(16,185,129,.15)}
+    .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;animation:pulse 2s infinite}
+
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px);z-index:100;display:none;justify-content:center;align-items:center;animation:fadeIn .2s ease}
+    .modal-overlay.open{display:flex}
+    .modal{background:linear-gradient(145deg,#1e293b,#0f172a);border:1px solid var(--border);border-radius:var(--radius);padding:2rem;width:100%;max-width:420px;box-shadow:0 24px 80px rgba(0,0,0,.5);animation:slideDown .3s ease}
+    .modal-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem}
+    .modal-h h2{font-size:1.2rem;font-weight:700}
+    .modal-close{width:32px;height:32px;border-radius:8px;border:none;background:rgba(255,255,255,.05);color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all .2s}
+    .modal-close:hover{background:rgba(255,255,255,.1);color:var(--text)}
+    .wallet-list{display:flex;flex-direction:column;gap:.75rem}
+    .wallet-opt{display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;border-radius:var(--radius-sm);border:1px solid var(--border);background:rgba(255,255,255,.03);cursor:pointer;transition:all .2s;width:100%;text-align:left;font-family:inherit;color:var(--text)}
+    .wallet-opt:hover{background:rgba(99,102,241,.1);border-color:var(--primary);transform:translateX(4px)}
+    .wallet-opt.disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+    .wallet-opt .icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.25rem;flex-shrink:0}
+    .wallet-opt .info{flex:1}
+    .wallet-opt .name{font-weight:600;font-size:.95rem}
+    .wallet-opt .desc{font-size:.8rem;color:var(--muted);margin-top:2px}
+    .wallet-opt .status{font-size:.7rem;color:var(--accent);font-weight:500}
+    .wallet-opt .install{font-size:.7rem;color:var(--warning);font-weight:500}
+
+    .connected-info{display:flex;align-items:center;gap:.5rem;padding:.45rem .9rem;border-radius:var(--radius-sm);background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);font-size:.8rem;font-weight:500}
+    .connected-info .addr{color:var(--text)}
+    .connected-info .chain{color:var(--muted);font-size:.75rem}
+
+    .hero{text-align:center;margin-bottom:2.5rem;animation:fadeIn .5s ease forwards}
+    .hero h1{font-size:2.5rem;font-weight:800;background:linear-gradient(135deg,#f1f5f9 0%,#a5b4fc 50%,var(--secondary) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.75rem}
+    .hero p{color:var(--muted);font-size:1.1rem;max-width:560px;margin:0 auto}
+    .hero .badge{display:inline-flex;align-items:center;gap:.4rem;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.25);border-radius:9999px;padding:.3rem .8rem;font-size:.75rem;font-weight:600;color:#a5b4fc;margin-bottom:1.25rem}
+
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:2rem;align-items:start;flex:1}
-    @media(max-width:900px){.grid{grid-template-columns:1fr}}
-    .card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:2rem}
-    .card-title{font-size:1.75rem;font-weight:700;text-align:center;margin-bottom:.5rem}
-    .card-sub{color:var(--muted);font-size:.95rem;text-align:center;margin-bottom:2rem}
-    .field{margin-bottom:1.5rem}
-    .field-label{display:block;font-size:.875rem;color:var(--muted);margin-bottom:.5rem}
-    .input-wrap{display:flex;align-items:center;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:.75rem 1rem;transition:border-color .2s}
-    .input-wrap:focus-within{border-color:var(--primary)}
-    .currency{font-size:1.5rem;color:var(--muted);margin-right:.5rem}
-    .input{flex:1;background:transparent;border:none;color:var(--text);font-size:1.5rem;font-weight:600;outline:none;width:100%}
+    @media(max-width:960px){.grid{grid-template-columns:1fr}}
+    @media(max-width:640px){.container{padding:1rem}.hero h1{font-size:1.75rem}}
+
+    .card{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius);padding:1.75rem;transition:all .3s}
+    .card:hover{border-color:rgba(99,102,241,.3);box-shadow:0 8px 32px rgba(0,0,0,.2)}
+
+    .field{margin-bottom:1.25rem}
+    .field-l{display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem}
+    .field-l label{font-size:.8rem;color:var(--muted);font-weight:500}
+    .input-wrap{display:flex;align-items:center;background:rgba(15,23,42,.6);border:1px solid var(--border);border-radius:var(--radius-sm);padding:.7rem 1rem;transition:all .2s}
+    .input-wrap:focus-within{border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,.15)}
+    .currency{font-size:1.25rem;color:var(--muted);margin-right:.5rem;font-weight:600}
+    .input{flex:1;background:transparent;border:none;color:var(--text);font-size:1.35rem;font-weight:600;outline:none;width:100%;font-family:inherit}
     .input::placeholder{color:var(--muted)}
-    .fiat{color:var(--primary);font-weight:600;font-size:.875rem}
-    .convert{background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);border-radius:8px;padding:1rem;margin-bottom:1.5rem}
-    .convert-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.25rem}
-    .convert-amount{font-size:1.25rem;font-weight:600;color:var(--accent)}
-    .merchant{background:var(--bg);border-radius:8px;padding:1rem;margin-bottom:1.5rem}
-    .merchant-name{font-weight:600;margin-bottom:.25rem}
-    .merchant-order{font-size:.875rem;color:var(--muted)}
-    .btn{width:100%;padding:1rem;background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;border-radius:var(--radius);color:#fff;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem}
-    .btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(99,102,241,.3)}
-    .steps{background:var(--bg);border-radius:8px;padding:1rem;margin-top:1.5rem}
-    .steps h3{font-size:1rem;margin-bottom:1rem}
+    .fiat{font-size:.8rem;color:var(--muted);margin-top:.4rem}
+
+    .info-box{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.15);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1.25rem}
+    .info-box.l{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.2rem}
+    .info-box.v{font-size:1.1rem;font-weight:700;color:var(--accent)}
+
+    .merchant{background:rgba(15,23,42,.6);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1.25rem;display:flex;justify-content:space-between;align-items:center}
+    .merchant .left{display:flex;flex-direction:column;gap:2px}
+    .merchant .name{font-weight:600;font-size:.95rem}
+    .merchant .order{font-size:.8rem;color:var(--muted)}
+    .merchant .tag{font-size:.65rem;padding:.2rem .6rem;border-radius:9999px;background:rgba(99,102,241,.15);color:#a5b4fc;font-weight:600}
+
+    .btn-pay{width:100%;padding:.9rem;background:linear-gradient(135deg,var(--primary),var(--secondary));border:none;border-radius:var(--radius-sm);color:#fff;font-size:1rem;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:.5rem;font-family:inherit;position:relative;overflow:hidden}
+    .btn-pay::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.1),transparent);background-size:200% 100%;animation:shimmer 2s infinite;pointer-events:none}
+    .btn-pay:hover{transform:translateY(-2px);box-shadow:0 8px 24px var(--primary-glow)}
+    .btn-pay:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+    .btn-pay:disabled::before{animation:none}
+
+    .steps{background:rgba(15,23,42,.6);border-radius:var(--radius-sm);padding:1.25rem;margin-top:1.5rem}
+    .steps h3{font-size:.95rem;font-weight:600;margin-bottom:1rem}
     .step{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}
     .step:last-child{margin-bottom:0}
-    .step-num{width:24px;height:24px;background:var(--primary);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0}
-    .step-text{font-size:.875rem;color:var(--muted)}
-    .widget-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
-    .widget-title{font-weight:600;display:flex;align-items:center;gap:.5rem}
-    .badge{background:var(--accent);color:var(--bg);font-size:.625rem;padding:.125rem .5rem;border-radius:9999px;font-weight:700}
-    #widget{min-height:450px;border-radius:8px;overflow:hidden}
-    .features{margin-top:3rem;padding:2rem 0;border-top:1px solid var(--border)}
-    .features h2{font-size:1.25rem;font-weight:600;margin-bottom:1.5rem;text-align:center}
-    .feat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem}
-    .feat{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;text-align:center}
-    .feat-icon{width:48px;height:48px;background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem}
-    .feat-name{font-weight:600;margin-bottom:.25rem}
-    .feat-desc{font-size:.875rem;color:var(--muted)}
-    .footer{margin-top:3rem;padding:2rem 0;border-top:1px solid var(--border);text-align:center;color:var(--muted);font-size:.875rem}
-    .footer-links{display:flex;justify-content:center;gap:2rem;margin-top:1rem}
-    .footer-links a{color:var(--muted);text-decoration:none;transition:color .2s}
+    .step-n{width:26px;height:26px;background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;flex-shrink:0;color:#fff}
+    .step-t{font-size:.85rem;color:var(--muted)}
+
+    .widget-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
+    .widget-h .title{font-weight:600;display:flex;align-items:center;gap:.5rem;font-size:.95rem}
+    .widget-h .badge{background:linear-gradient(135deg,var(--accent),#059669);color:#fff;font-size:.6rem;padding:.15rem .55rem;border-radius:9999px;font-weight:700;letter-spacing:.02em}
+    #widget{min-height:460px;border-radius:var(--radius-sm);overflow:hidden}
+
+    .features{margin-top:3rem;padding:2.5rem 0;border-top:1px solid var(--border)}
+    .features h2{font-size:1.3rem;font-weight:700;margin-bottom:1.5rem;text-align:center}
+    .feat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem}
+    @media(max-width:768px){.feat-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:480px){.feat-grid{grid-template-columns:1fr}}
+    .feat{background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;text-align:center;transition:all .3s}
+    .feat:hover{border-color:rgba(99,102,241,.3);transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,.2)}
+    .feat-icon{width:52px;height:52px;background:linear-gradient(135deg,var(--primary),var(--secondary));border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;font-size:1.5rem}
+    .feat-name{font-weight:600;font-size:.95rem;margin-bottom:.25rem}
+    .feat-desc{font-size:.82rem;color:var(--muted)}
+
+    .footer{margin-top:3rem;padding:2rem 0;border-top:1px solid var(--border);text-align:center}
+    .footer p{color:var(--muted);font-size:.85rem}
+    .footer-links{display:flex;justify-content:center;gap:1.5rem;margin-top:.75rem}
+    .footer-links a{color:var(--muted);text-decoration:none;font-size:.85rem;transition:color .2s}
     .footer-links a:hover{color:var(--primary)}
+
+    .toast{position:fixed;bottom:2rem;right:2rem;padding:.85rem 1.25rem;border-radius:var(--radius-sm);background:var(--card);backdrop-filter:blur(12px);border:1px solid var(--border);color:var(--text);font-size:.85rem;font-weight:500;z-index:200;transform:translateY(100px);opacity:0;transition:all .35s ease;max-width:380px;display:flex;align-items:center;gap:.75rem}
+    .toast.show{transform:translateY(0);opacity:1}
+    .toast.error{border-color:rgba(239,68,68,.4);background:rgba(239,68,68,.1)}
+    .toast.success{border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.1)}
+    .toast-icon{font-size:1.1rem;flex-shrink:0}
   </style>
 </head>
 <body>
   <div class="container">
     <header class="header">
-      <div class="logo">
-        <div class="logo-icon">R</div>
-        <span class="logo-text">RizzlePayment</span>
+      <div class="header-l">
+        <a href="/" class="logo">
+          <div class="logo-icon">R</div>
+          <span class="logo-text">RizzlePayment</span>
+        </a>
+      </div>
+      <div class="header-r">
+        <div id="connectionStatus"></div>
+        <button class="wallet-btn" id="walletBtn" onclick="openWalletModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+          Connect Wallet
+        </button>
       </div>
     </header>
 
+    <div class="hero animate-in">
+      <div class="badge">
+        <span>&#x26A1;</span> Cross-Chain Payments Powered by LI.FI
+      </div>
+      <h1>Pay with any token,<br />from any chain</h1>
+      <p>Seamlessly pay using any cryptocurrency. Your payment is automatically swapped to USDC.</p>
+    </div>
+
     <main class="grid">
-      <div>
+      <div class="animate-in-d1">
         <div class="card">
-          <h1 class="card-title">Pay with Crypto</h1>
-          <p class="card-sub">Pay securely with any token from any chain</p>
+          <div style="text-align:center;margin-bottom:1.75rem">
+            <h2 style="font-size:1.5rem;font-weight:700">Pay with Crypto</h2>
+            <p style="color:var(--muted);font-size:.9rem;margin-top:.3rem">Enter the amount and complete your payment</p>
+          </div>
+
           <div class="field">
-            <label class="field-label">Amount to Pay</label>
+            <div class="field-l">
+              <label>Amount</label>
+              <span style="font-size:.75rem;color:var(--muted)">USD</span>
+            </div>
             <div class="input-wrap">
               <span class="currency">$</span>
               <input type="number" class="input" id="amount" placeholder="0.00" value="10.00" min="1" />
             </div>
-            <p class="fiat">USD (USDC)</p>
+            <p class="fiat">&#x2248; 10.00 USDC</p>
           </div>
-          <div class="convert">
-            <div class="convert-label">You'll Receive</div>
-            <div class="convert-amount" id="receive">10.00 USDC on Ethereum</div>
+
+          <div class="info-box">
+            <div class="info-box l">You'll send</div>
+            <div class="info-box v" id="sendAmount">~10.00 USDC on Ethereum</div>
           </div>
+
           <div class="merchant">
-            <div class="merchant-name">Your Store Name</div>
-            <div class="merchant-order">Order: #12345</div>
+            <div class="left">
+              <span class="name">Your Store Name</span>
+              <span class="order">Order #12345 &middot; Just now</span>
+            </div>
+            <span class="tag">Pending</span>
           </div>
-          <button class="btn" onclick="document.getElementById('widget-section').scrollIntoView({behavior:'smooth'})">
-            <span>Swap to USDC</span><span>→</span>
+
+          <button class="btn-pay" id="payBtn" onclick="handlePay()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+            Continue to Swap
           </button>
-        </div>
-        <div class="steps">
-          <h3>How It Works</h3>
-          <div class="step"><div class="step-num">1</div><span class="step-text">Select any token from any chain</span></div>
-          <div class="step"><div class="step-num">2</div><span class="step-text">Widget finds the best route for you</span></div>
-          <div class="step"><div class="step-num">3</div><span class="step-text">Receive USDC on Ethereum instantly</span></div>
+
+          <div class="steps">
+            <h3>How it works</h3>
+            <div class="step"><div class="step-n">1</div><span class="step-t">Connect your wallet</span></div>
+            <div class="step"><div class="step-n">2</div><span class="step-t">Swap any token to USDC via LI.FI</span></div>
+            <div class="step"><div class="step-n">3</div><span class="step-t">USDC arrives on Ethereum</span></div>
+          </div>
         </div>
       </div>
 
-      <div class="card" id="widget-section">
-        <div class="widget-header">
-          <span class="widget-title">
-            <span>Cross-Chain Swap</span>
-            <span class="badge">Powered by LI.FI</span>
-          </span>
+      <div class="animate-in-d2">
+        <div class="card" id="widgetSection">
+          <div class="widget-h">
+            <span class="title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+              Cross-Chain Swap
+            </span>
+            <span class="badge">LI.FI</span>
+          </div>
+          <div id="widget"></div>
         </div>
-        <div id="widget"></div>
       </div>
     </main>
 
-    <section class="features">
-      <h2>Why Use RizzlePayment?</h2>
+    <section class="features animate-in-d3">
+      <h2>Why RizzlePayment?</h2>
       <div class="feat-grid">
-        <div class="feat"><div class="feat-icon">&#x1F309;</div><div class="feat-name">Cross-Chain</div><div class="feat-desc">Pay from any blockchain</div></div>
-        <div class="feat"><div class="feat-icon">&#x26A1;</div><div class="feat-name">Fast Settlements</div><div class="feat-desc">Sub-second finality</div></div>
-        <div class="feat"><div class="feat-icon">&#x1F512;</div><div class="feat-name">Secure</div><div class="feat-desc">Best route optimization</div></div>
-        <div class="feat"><div class="feat-icon">&#x1F48E;</div><div class="feat-name">Low Fees</div><div class="feat-desc">Near-zero gas costs</div></div>
+        <div class="feat">
+          <div class="feat-icon">&#x1F310;</div>
+          <div class="feat-name">Multi-Chain</div>
+          <div class="feat-desc">Pay from Ethereum, Polygon, Arbitrum, BNB, and more</div>
+        </div>
+        <div class="feat">
+          <div class="feat-icon">&#x26A1;</div>
+          <div class="feat-name">Auto-Swap</div>
+          <div class="feat-desc">Any token &rarr; USDC automatically via LI.FI</div>
+        </div>
+        <div class="feat">
+          <div class="feat-icon">&#x1F512;</div>
+          <div class="feat-name">Non-Custodial</div>
+          <div class="feat-desc">You control your funds at all times</div>
+        </div>
+        <div class="feat">
+          <div class="feat-icon">&#x1F48E;</div>
+          <div class="feat-name">Best Routes</div>
+          <div class="feat-desc">Optimized swaps across bridges &amp; DEXs</div>
+        </div>
       </div>
     </section>
 
     <footer class="footer">
-      <p>&copy; 2026 RizzlePayment. Powered by LI.FI &amp; Arc.</p>
+      <p>&copy; 2026 RizzlePayment. Built with LI.FI.</p>
       <div class="footer-links">
-        <a href="https://li.fi">LI.FI</a>
-        <a href="https://arc.network">Arc</a>
+        <a href="https://li.fi" target="_blank">LI.FI</a>
+        <a href="https://ethereum.org" target="_blank">Ethereum</a>
+        <a href="https://developers.li.fi" target="_blank">Docs</a>
       </div>
     </footer>
   </div>
 
+  <div class="modal-overlay" id="walletModal">
+    <div class="modal">
+      <div class="modal-h">
+        <h2>Connect Wallet</h2>
+        <button class="modal-close" onclick="closeWalletModal()">&times;</button>
+      </div>
+      <div class="wallet-list" id="walletList"></div>
+      <p style="margin-top:1rem;font-size:.75rem;color:var(--muted);text-align:center">
+        By connecting, you agree to the terms of service.
+      </p>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <span class="toast-icon" id="toastIcon">&#x2714;</span>
+    <span id="toastMsg"></span>
+  </div>
+
   <script src="https://widgets.li.fi/standalone/widget/v1.1.0/index.js"></script>
   <script>
-    function initWidget() {
+    let provider = null;
+    let signer = null;
+    let account = null;
+    let chainId = null;
+    let walletType = null;
+
+    const wallets = [
+      { id: 'metamask', name: 'MetaMask', icon: '&#x1F4E1;', detect: () => window.ethereum?.isMetaMask && !window.ethereum?.isRabby, desc: 'Popular browser wallet', installed: false },
+      { id: 'rabby', name: 'Rabby', icon: '&#x1FAB4;', detect: () => window.ethereum?.isRabby, desc: 'Smart DeFi wallet', installed: false },
+      { id: 'okx', name: 'OKX Wallet', icon: '&#x1F4B1;', detect: () => window.okxwallet, desc: 'Multi-chain wallet', installed: false },
+      { id: 'walletconnect', name: 'WalletConnect', icon: '&#x1F517;', detect: () => true, desc: 'Scan with mobile wallet', installed: true },
+    ];
+
+    function detectWallets() {
+      return wallets.map(w => ({
+        ...w,
+        installed: w.id === 'walletconnect' ? true : w.detect(),
+      }));
+    }
+
+    function openWalletModal() {
+      if (account) {
+        disconnectWallet();
+        return;
+      }
+      const list = document.getElementById('walletList');
+      const detected = detectWallets();
+      list.innerHTML = detected.map(w => {
+        const installed = w.installed;
+        return `
+          <button class="wallet-opt${!installed ? ' disabled' : ''}" onclick="${installed ? `connectWallet('${w.id}')` : ''}">
+            <div class="icon" style="background:rgba(99,102,241,.12)">${w.icon}</div>
+            <div class="info">
+              <div class="name">${w.name}</div>
+              <div class="desc">${w.desc}</div>
+            </div>
+            <span class="${installed ? 'status' : 'install'}">${installed ? 'Available' : 'Not detected'}</span>
+          </button>
+        `;
+      }).join('');
+      document.getElementById('walletModal').classList.add('open');
+    }
+
+    function closeWalletModal() {
+      document.getElementById('walletModal').classList.remove('open');
+    }
+
+    document.getElementById('walletModal').addEventListener('click', function(e) {
+      if (e.target === this) closeWalletModal();
+    });
+
+    async function connectWallet(id) {
+      try {
+        if (id === 'walletconnect') {
+          showToast('WalletConnect coming soon. Use a browser extension wallet.', 'info');
+          return;
+        }
+
+        let ethProvider;
+        if (id === 'okx') {
+          ethProvider = window.okxwallet;
+        } else {
+          ethProvider = window.ethereum;
+        }
+
+        if (!ethProvider) {
+          showToast(`${id === 'okx' ? 'OKX Wallet' : 'Ethereum wallet'} not detected. Please install it.`, 'error');
+          return;
+        }
+
+        const accounts = await ethProvider.request({ method: 'eth_requestAccounts' });
+        const chain = await ethProvider.request({ method: 'eth_chainId' });
+
+        provider = new ethers.BrowserProvider(ethProvider);
+        signer = await provider.getSigner();
+        account = accounts[0];
+        chainId = parseInt(chain, 16);
+        walletType = id;
+
+        updateUI();
+        closeWalletModal();
+        showToast(`Connected: ${shortenAddress(account)}`, 'success');
+      } catch (err) {
+        if (err.code !== 4001) {
+          showToast('Connection failed. Please try again.', 'error');
+        }
+      }
+    }
+
+    function disconnectWallet() {
+      provider = null;
+      signer = null;
+      account = null;
+      chainId = null;
+      walletType = null;
+      updateUI();
+      showToast('Wallet disconnected', 'info');
+    }
+
+    function updateUI() {
+      const btn = document.getElementById('walletBtn');
+      const status = document.getElementById('connectionStatus');
+
+      if (account) {
+        const wName = wallets.find(w => w.id === walletType)?.name || 'Wallet';
+        btn.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+          ${shortenAddress(account)}
+        `;
+        btn.classList.add('connected');
+        status.innerHTML = `
+          <div class="connected-info">
+            <span class="dot"></span>
+            <span class="addr">${wName}</span>
+          </div>
+        `;
+      } else {
+        btn.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+          Connect Wallet
+        `;
+        btn.classList.remove('connected');
+        status.innerHTML = '';
+      }
+    }
+
+    function shortenAddress(addr) {
+      return addr.slice(0, 6) + '...' + addr.slice(-4);
+    }
+
+    function handlePay() {
+      if (!account) {
+        openWalletModal();
+        return;
+      }
+      document.getElementById('widgetSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function showToast(msg, type) {
+      const el = document.getElementById('toast');
+      const icon = document.getElementById('toastIcon');
+      const txt = document.getElementById('toastMsg');
+      el.className = 'toast ' + type;
+      el.classList.add('show');
+      txt.textContent = msg;
+      icon.textContent = type === 'error' ? '&#x2716;' : type === 'success' ? '&#x2714;' : '&#x2139;';
+      clearTimeout(el._t);
+      el._t = setTimeout(() => el.classList.remove('show'), 3500);
+    }
+
+    document.getElementById('amount').addEventListener('input', function(e) {
+      const v = e.target.value || '0';
+      document.getElementById('sendAmount').textContent = '~' + parseFloat(v).toFixed(2) + ' USDC on Ethereum';
+    });
+
+    function initLiFi() {
       if (typeof LiFiWidget !== 'undefined') {
         LiFiWidget.init({
           container: 'widget',
@@ -144,13 +450,14 @@
           theme: { palette: { primary: { main: '#6366f1' }, secondary: { main: '#8b5cf6' } } },
         });
       } else {
-        setTimeout(initWidget, 500);
+        setTimeout(initLiFi, 500);
       }
     }
-    document.getElementById('amount').addEventListener('input', function(e) {
-      document.getElementById('receive').textContent = (e.target.value || '0') + ' USDC on Ethereum';
+    initLiFi();
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeWalletModal();
     });
-    initWidget();
   </script>
 </body>
 </html>

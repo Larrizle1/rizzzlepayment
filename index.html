@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RizzlePayment - Cross-Chain Crypto Payment Gateway</title>
+  <title>RizzlePayment - Cross-Chain USDC Payments on Arc</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -163,10 +163,10 @@
 
     <div class="hero animate-in">
       <div class="badge">
-        <span>&#x26A1;</span> Cross-Chain Payments Powered by LI.FI
+        <span>&#x26A1;</span> Cross-Chain USDC &rarr; Arc &middot; Powered by LI.FI
       </div>
-      <h1>Pay with any token,<br />from any chain</h1>
-      <p>Seamlessly pay using any cryptocurrency. Your payment is automatically swapped to USDC.</p>
+      <h1>Swap any token<br />to USDC on Arc</h1>
+      <p>Pay with any cryptocurrency. LI.FI finds the best route to settle USDC on Arc network.</p>
     </div>
 
     <main class="grid">
@@ -174,7 +174,7 @@
         <div class="card">
           <div style="text-align:center;margin-bottom:1.75rem">
             <h2 style="font-size:1.5rem;font-weight:700">Pay with Crypto</h2>
-            <p style="color:var(--muted);font-size:.9rem;margin-top:.3rem">Enter the amount and complete your payment</p>
+            <p style="color:var(--muted);font-size:.9rem;margin-top:.3rem">Amount settles in USDC on Arc testnet</p>
           </div>
 
           <div class="field">
@@ -186,12 +186,12 @@
               <span class="currency">$</span>
               <input type="number" class="input" id="amount" placeholder="0.00" value="10.00" min="1" />
             </div>
-            <p class="fiat">&#x2248; 10.00 USDC</p>
+            <p class="fiat">&#x2248; 10.00 USDC on Arc</p>
           </div>
 
           <div class="info-box">
             <div class="info-box l">You'll send</div>
-            <div class="info-box v" id="sendAmount">~10.00 USDC on Ethereum</div>
+            <div class="info-box v" id="sendAmount">~10.00 USDC on Arc</div>
           </div>
 
           <div class="merchant">
@@ -211,7 +211,7 @@
             <h3>How it works</h3>
             <div class="step"><div class="step-n">1</div><span class="step-t">Connect your wallet</span></div>
             <div class="step"><div class="step-n">2</div><span class="step-t">Swap any token to USDC via LI.FI</span></div>
-            <div class="step"><div class="step-n">3</div><span class="step-t">USDC arrives on Ethereum</span></div>
+            <div class="step"><div class="step-n">3</div><span class="step-t">USDC arrives on Arc testnet</span></div>
           </div>
         </div>
       </div>
@@ -236,12 +236,12 @@
         <div class="feat">
           <div class="feat-icon">&#x1F310;</div>
           <div class="feat-name">Multi-Chain</div>
-          <div class="feat-desc">Pay from Ethereum, Polygon, Arbitrum, BNB, and more</div>
+          <div class="feat-desc">Pay from any chain &mdash; settle in USDC on Arc</div>
         </div>
         <div class="feat">
           <div class="feat-icon">&#x26A1;</div>
           <div class="feat-name">Auto-Swap</div>
-          <div class="feat-desc">Any token &rarr; USDC automatically via LI.FI</div>
+          <div class="feat-desc">Any token &rarr; USDC on Arc via LI.FI</div>
         </div>
         <div class="feat">
           <div class="feat-icon">&#x1F512;</div>
@@ -257,10 +257,10 @@
     </section>
 
     <footer class="footer">
-      <p>&copy; 2026 RizzlePayment. Built with LI.FI.</p>
+      <p>&copy; 2026 RizzlePayment. USDC settlement on Arc &middot; Powered by LI.FI.</p>
       <div class="footer-links">
         <a href="https://li.fi" target="_blank">LI.FI</a>
-        <a href="https://ethereum.org" target="_blank">Ethereum</a>
+        <a href="https://www.circle.com/en/arc" target="_blank">Arc</a>
         <a href="https://developers.li.fi" target="_blank">Docs</a>
       </div>
     </footer>
@@ -438,7 +438,7 @@
 
     document.getElementById('amount').addEventListener('input', function(e) {
       const v = e.target.value || '0';
-      document.getElementById('sendAmount').textContent = '~' + parseFloat(v).toFixed(2) + ' USDC on Ethereum';
+      document.getElementById('sendAmount').textContent = '~' + parseFloat(v).toFixed(2) + ' USDC on Arc';
     });
 
     function initLiFi() {
@@ -448,6 +448,10 @@
           integrator: 'rizzzlepayment',
           appearance: 'dark',
           theme: { palette: { primary: { main: '#6366f1' }, secondary: { main: '#8b5cf6' } } },
+          config: {
+            toToken: 'USDC',
+            toChain: 920,
+          },
         });
       } else {
         setTimeout(initLiFi, 500);
